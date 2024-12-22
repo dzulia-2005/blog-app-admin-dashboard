@@ -24,33 +24,27 @@ export const updateBlog = async (id: string, payload: Partial<Blog>) => {
     .then((res) => res.data);
 };
 
+
 export const createBlog = async ({
   payload,
   user,
 }: {
-  payload: any;
-  user: any;
-}) => {
-  try {
-    const res = await supabase.storage
-      .from("blog_images")
-      .upload(payload.image_url?.name, payload.image_url);
+  payload: Partial<Blog>;
+  user: string;
+}): Promise<Blog> => {
+  const { data, error } = await supabase
+    .from("blogs")
+    .insert({ ...payload, user_id: user })
+    .select()
+    .single();
 
-
-    const insertRes = await supabase.from("blogs").insert({
-      title_ka: payload.title_ka,
-      title_en: payload.title_en,
-      description_ka: payload.description_ka,
-      description_en: payload.description_en,
-      image_url: res.data?.fullPath,
-      user_id: user?.user.id,
-    });
-
-    if (insertRes.error) {
-      throw new Error(insertRes.error.message);
-    }
-    console.log("Successfully created", insertRes);
-  } catch (error) {
-    console.error("Error creating blog:", error);
+  if (error) {
+    throw new Error(error.message);
   }
+
+  if (!data) {
+    throw new Error("No blog was created.");
+  }
+
+  return data; // Ensure we return the created blog
 };
